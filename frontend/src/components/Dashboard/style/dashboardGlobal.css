@@ -1,0 +1,38 @@
+@import './color.css';
+
+  
+a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.dashboard-main {
+    height: 100vh;
+    font-family: "Inter", sans-serif;
+    background-color: var(--main-bg);
+    color: var(--main-color);
+}
+  
+.dashboard-container {
+    display: flex;
+}
+
+  .menuContainer {
+    width: 250px;
+    padding: 5px 20px;
+    border-right: 2px solid var(--soft-bg);
+  }
+  
+  /* Media Query for lg */
+  @media screen and (max-width: 1024px) {
+    .menuContainer {
+      width: max-content;
+    }
+  }
+  
+  /* Content Container Styles */
+  .contentContainer {
+    padding: 5px 20px;
+    width: 100%;
+    overflow: auto;
+  }

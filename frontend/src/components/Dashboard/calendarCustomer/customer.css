@@ -1,0 +1,105 @@
+.queue-btn {
+    padding: 12px 32px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    color: #222;
+    border: 1px solid #fff;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0;
+    text-decoration: none;
+    margin: 10px 0 10px 0;
+    text-align: right;
+}
+
+.button-container {
+    text-align: right;
+}
+
+.queue-btn-light {
+    background: transparent;
+    color: #fff;
+}
+  
+.queue-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transition: 0.3s;
+}
+
+.btn-save {
+    padding: 7px 20px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    color: white;
+    border: 1px solid green;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0;
+    text-decoration: none;
+    margin: 5px 5px 5px 5px;
+    text-align: right;
+    background: green;
+}
+
+.btn-save:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transition: 0.3s;
+    color: green;
+}
+
+.btn-cancel {
+    padding: 7px 20px;
+    font-size: 1rem;
+    text-transform: uppercase;
+    color: white;
+    border: 1px solid red;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 0;
+    text-decoration: none;
+    margin: 5px 5px 5px 5px;
+    text-align: right;
+    background: red;
+}
+
+.btn-cancel:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    transition: 0.3s;
+    color: red;
+}
+
+.data-grid {
+    color: white;
+    border-color: white;
+}
+
+/* .data-container {
+    color: white;
+    max-height: 60vh;
+    max-width: 100%;
+    justify-content: center;
+} */
+
+.MuiDataGrid-cell, 
+.MuiDataGrid-columnHeaderTitle,
+.MuiDataGrid-withBorderColor {
+    color: #fff;
+}
+
+.MuiToolbar-gutters, 
+.MuiSvgIcon-root-MuiSelect-icon,
+.css-pqjvzy-MuiSvgIcon-root-MuiSelect-icon, 
+.css-zylse7-MuiButtonBase-root-MuiIconButton-root.Mui-disabled {
+    color: white !important;
+}
+
+.MuiDataGrid-columnHeaders {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.MuiDataGrid-virtualScrollerContent {
+    text-align: center;
+}

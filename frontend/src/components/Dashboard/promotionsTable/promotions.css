@@ -1,0 +1,11 @@
+.row .css-14s5rfu-MuiFormLabel-root-MuiInputLabel-root,
+.row .css-1d3z3hw-MuiOutlinedInput-notchedOutline,
+.row .css-1jy569b-MuiFormLabel-root-MuiInputLabel-root,
+.row .css-nxo287-MuiInputBase-input-MuiOutlinedInput-input{
+    color: black !important;
+    border-color: black !important;
+}
+
+.row .MuiSvgIcon-fontSizeMedium{
+    color: black;
+}

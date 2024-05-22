@@ -1,0 +1,259 @@
+/* .settingAccount-container {
+    display: flex;
+    justify-content: left;
+    align-items: left;
+    height: 100vh;
+    margin: 0;
+}
+
+.settingAccount-container form {
+    display: flex;
+    flex-direction: column;
+}
+
+.form-group {
+    margin-bottom: 20px;
+}
+
+.settingAccount-container label {
+    font-weight: bold;
+}
+
+.settingAccount-container input {
+    width: 100%;
+    padding: 10px;
+    border: 1px solid white;
+    border-radius: 5px;
+}
+
+.settingAccount-container .form-group input {
+    color: white;
+}
+
+.white-placeholder::placeholder {
+    color: white; 
+  }
+
+.settingAccount-container button {
+    background-color: #007BFF;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.container {
+    margin: 0 auto;
+    max-width: 400px;
+}
+  
+.row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.col-xs-6,
+.col-md-4 {
+    padding: 15px 15px;
+    flex: 0 0 50%;
+    max-width: 60%;
+}
+  
+img.rounded-circle {
+    border-radius: 50%;
+    max-width: 100%;
+    height: auto;
+} */
+  
+
+/* .profile-container {
+    margin: 0;
+    max-width: 769px;
+    justify-content: left;
+    align-items: left;
+  }
+  
+.profile-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: left;
+}
+  
+.profile-col{
+    padding: 0 0;
+    flex: 0 0 40%;
+    max-width: 30%;
+}
+  
+img.profile-rounded {
+    border-radius: 5%;
+    max-width: 50%;
+    height: auto;
+} */
+
+.profile {
+    display: flex;
+  }
+  
+.profile .view {
+    flex: 1;
+}
+  
+.profile .view .info .topInfo {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+}
+  
+.profile .view .info .topInfo img {
+    width: 100px;
+    height: 100px;
+    border-radius: 20px;
+    object-fit: cover;
+}
+  
+.profile .view .info .topInfo h1 {
+    font-weight: 500;
+}
+  
+.profile .view .info .details {
+    font-size: 18px;
+    margin-top: 10px;
+}
+  
+.profile .view .info .details .item {
+    margin: 10px 0px;
+}
+  
+.profile .view .info .details .item .itemTitle {
+    font-weight: 600;
+    margin-right: 10px;
+    text-transform: capitalize;
+}
+  
+.profile .view hr {
+    width: 90%;
+    height: 0.5px;
+    border: 0;
+    margin: 20px 0;
+    display: none;
+}
+  
+.profile .view .chart {
+    margin-top: 50px;
+    width: 80%;
+    height: 400px;
+    display: none;
+}
+  
+.profile .activities {
+    flex: 1;
+}
+  
+.profile .activities h2 {
+    margin-bottom: 20px;
+}
+  
+.profile .activities ul li {
+    list-style-type: none;
+    position: relative;
+    width: 1px;
+    padding-top: 50px;
+    background-color: #f45b69;
+}
+  
+.profile .activities ul li::after {
+    content: "";
+    position: absolute;
+    left: 50%;
+    bottom: 0;
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background-color: #f45b69;
+    transform: translateX(-50%);
+}
+  
+.profile .activities ul li div {
+    min-width: 480px;
+    padding: 15px;
+    background-color: #f45b6810;
+}
+  
+@media (max-width: 768px) {
+    .profile .view hr {
+      display: block;
+    }
+  
+    .profile .view .chart {
+      display: block;
+}
+  
+    .profile .activities ul li div {
+      min-width: 250px;
+    }
+}
+  
+.profile .activities ul li div p {
+    margin-bottom: 5px;
+}
+  
+.profile .activities ul li div time {
+    font-size: 12px;
+}
+  
+.edit-button-blue {
+    background-color: rgba(0, 0, 255, 0.8);
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-button-blue:hover {
+    background-color: blue;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-button-red {
+    background-color: rgba(255, 0, 0, 0.9);
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-button-red:hover {
+    background-color: red;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-button-grey {
+    background-color: rgba(86, 85, 85, 0.9);
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.edit-button-grey:hover {
+    background-color: grey;
+    color: #fff;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 5px;
+    cursor: pointer;
+}

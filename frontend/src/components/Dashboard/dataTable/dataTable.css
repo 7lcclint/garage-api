@@ -1,0 +1,44 @@
+/* .dataTable */
+.dataTable {
+  /* .dataGrid */
+  background: white;
+  padding: 20px;
+  margin-bottom: 10px;
+}
+
+/* .dataTable .dataGrid .MuiDataGrid-toolbarContainer */
+.dataTable .dataGrid .MuiDataGrid-toolbarContainer {
+  flex-direction: row-reverse;
+}
+
+/* .dataTable .dataGrid img */
+.dataTable .dataGrid img {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+/* .dataTable .dataGrid .action */
+.dataTable .dataGrid .action {
+  display: flex;
+  gap: 15px;
+}
+
+/* .dataTable .dataGrid .action img */
+.dataTable .dataGrid .action img {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+}
+
+.dataTable .dataGrid {
+  max-width: 100%;
+}
+
+@media screen and (max-width: 768px) {
+  .dataTable .dataGrid {
+    max-width: 100%; 
+    overflow: auto; 
+  }
+}
