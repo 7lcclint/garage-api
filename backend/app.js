@@ -13,7 +13,7 @@ console.log('Secret Key',secretKey)
 app.use(express.static(path.join(__dirname, "src")));
 
 const corsOptions = {
-  origin: ['http://127.0.0.1:5173','http://localhost:5173','https://7lcclint.github.io'],
+  origin: ['http://127.0.0.1:5173','http://localhost:5173','https://7lcclint.github.io','http://www.garages.thammadalok.com','*'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
