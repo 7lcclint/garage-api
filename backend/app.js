@@ -6,14 +6,11 @@ const jwt = require('jsonwebtoken');
 const cookieParser = require('cookie-parser');
 app.use(express.json());
 const crypto = require("crypto");
-const multer = require('multer');
-const path = require('path');
 const secretKey = crypto.randomBytes(32).toString("hex");
 console.log('Secret Key',secretKey)
-app.use(express.static(path.join(__dirname, "src")));
 
 const corsOptions = {
-  origin: ['http://127.0.0.1:5173','http://localhost:5173','https://7lcclint.github.io','http://www.garages.thammadalok.com','*'],
+  origin: ['http://127.0.0.1:5173','http://localhost:5173','https://7lcclint.github.io'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -22,11 +19,12 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.options('/reservationsByStatusAccept', cors());
 app.use(cookieParser());
+app.use(express.json({ limit: '100mb' }));
 
 const db = mysql.createConnection({
   host: "34.143.179.46",
-  user: "root",
-  password: "kornkorn00",
+  user: "clint",
+  password: "garageDB2024",
   database: "garages",
   port: 3306
 });
@@ -332,40 +330,48 @@ app.put('/update-user-data', verify, (req, res) => {
 });
 
 app.put('/change-password/:user_id', verify, (req, res) => {
-  const user_id = req.user_id;
+  // 1. Extract Data
+  const user_id = req.user_id;  // Assumes `verify` middleware sets req.user_id
   const currentPassword = req.body.currentPassword;
   const newPassword = req.body.newPassword;
 
+  // 2. Input Validation
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: 'Current and new passwords are required' });
+    return res.status(400).json({ error: 'Current and new passwords are required' }); // Bad Request
   }
-  
+
+  // 3. Fetch User's Existing Password
   db.query('SELECT password FROM user WHERE user_id = ?', [user_id], (err, results) => {
-    if (err) {
+    if (err) { 
       console.error('Error fetching user password:', err);
-      return res.status(500).json({ error: 'Error fetching user password' });
+      return res.status(500).json({ error: 'Database error' }); // Internal Server Error (general)
     }
 
+    // 4. Handle User Not Found
     if (results.length === 0) {
-      return res.status(404).json({ error: 'User not found' });
+      return res.status(404).json({ error: 'User not found' }); // Not Found
     }
 
-    const hashedPassword = results[0].password;
-    if (currentPassword === hashedPassword) {
+    // 5. Compare Passwords
+    const oldPassword = results[0].password;
+    if (currentPassword === oldPassword) {
+
+      // 6. Update Password if Correct
       db.query('UPDATE user SET password = ? WHERE user_id = ?', [newPassword, user_id], (err, result) => {
         if (err) {
           console.error('Error updating password:', err);
-          return res.status(500).json({ error: 'Error updating password' });
+          return res.status(500).json({ error: 'Error updating password' }); // Specific DB update error
         }
 
         if (result.affectedRows === 1) {
-          return res.json({ message: 'Password updated successfully' });
+          return res.json({ message: 'Password updated successfully' }); // Success!
         } else {
-          return res.status(500).json({ error: 'Password update failed' });
+          return res.status(500).json({ error: 'Password update failed' }); // Unexpected DB behavior
         }
       });
-    } else {
-      return res.status(401).json({ error: 'Current password is incorrect' });
+
+    } else { // Added error handling:
+      return res.status(401).json({ error: 'Current password is incorrect' }); // Unauthorized
     }
   });
 });
@@ -383,22 +389,15 @@ app.get('/getEmployees', verify, function (req, res) {
   });
 });
 
-
-const storage = multer.diskStorage({
-  destination: path.join(__dirname, '../garage/src/assets/profilePicture'),
-  filename: (req, file, cb) => {
-    const fileName = `${Date.now()}-${file.originalname}`;
-    cb(null, fileName);
-  },
-});
-
-const upload = multer({ storage });
-
-app.put('/update-profile-picture/:user_id', verify, upload.single('image'), (req, res) => {
+app.put('/update-profile-picture/:user_id', verify, (req, res) => {
   const user_id = req.params.user_id;
-  
-  if (req.file) {
-    const imageUrl = req.file.filename;
+  const base64Image = req.body.image; // Receive the base64 string from the frontend
+
+  if (base64Image) {
+    // Validate base64 string (check format, file type, size if needed)
+    if (!base64Image.startsWith('data:image/')) {
+      return res.status(400).json({ error: 'Invalid image format' });
+    }
 
     const sql = `
       UPDATE garages.user
@@ -406,20 +405,18 @@ app.put('/update-profile-picture/:user_id', verify, upload.single('image'), (req
       WHERE user_id = ?;
     `;
 
-    db.query(sql, [imageUrl, user_id], (err, result) => {
+    db.query(sql, [base64Image, user_id], (err, result) => {
       if (err) {
         console.error('Error updating profile picture:', err);
         return res.status(500).json({ error: 'Error updating profile picture' });
       } else if (result.changedRows === 0) {
-        console.error('No rows were updated');
         return res.status(500).json({ error: 'No rows were updated' });
       } else {
-        console.log('Profile picture updated successfully');
-        return res.status(200).json({ message: 'Profile picture updated successfully' });
+        return res.status(200).json({ message: 'Profile picture updated successfully', profile_picture: base64Image });
       }
     });
   } else {
-    res.status(400).json({ error: 'Image upload failed' });
+    res.status(400).json({ error: 'Image data not provided' });
   }
 });
 
