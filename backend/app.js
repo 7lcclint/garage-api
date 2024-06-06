@@ -10,7 +10,7 @@ const secretKey = crypto.randomBytes(32).toString("hex");
 console.log('Secret Key',secretKey)
 
 const corsOptions = {
-  origin: ['http://127.0.0.1:5173','http://localhost:5173','http://garages.thammadalok.com','https://7lcclint.github.io'],
+  origin: ['http://127.0.0.1:5173','http://localhost:5173','http://garages.thammadalok.com','https://garages.thammadalok.com','https://7lcclint.github.io'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
