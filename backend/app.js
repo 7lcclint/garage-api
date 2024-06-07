@@ -23,8 +23,8 @@ app.use(express.json({ limit: '100mb' }));
 
 const db = mysql.createConnection({
   host: "34.143.179.46",
-  user: "clint",
-  password: "garageDB2024",
+  user: "root",
+  password: "1234",
   database: "garages",
   port: 3306
 });
@@ -219,6 +219,18 @@ app.get('/repairData', verify, (req, res) => {
     INNER JOIN repair ON user.user_id = repair.user_id
     INNER JOIN promotion ON promotion.promotion_id = repair.promotion_id
   `;
+
+  db.query(sql, (err, data) => {
+    if (err) {
+      console.error('Error executing the SQL query:', err);
+      return res.status(500).json({ error: 'Error retrieving repair data' });
+    }
+    res.status(200).json(data);
+  });
+});
+
+app.get('/getRevenueList', (req, res) => {
+  const sql = 'SELECT discount_service, repair_date FROM garages.repair';
 
   db.query(sql, (err, data) => {
     if (err) {
