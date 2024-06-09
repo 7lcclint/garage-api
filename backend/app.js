@@ -7,10 +7,11 @@ const cookieParser = require('cookie-parser');
 app.use(express.json());
 const crypto = require("crypto");
 const secretKey = crypto.randomBytes(32).toString("hex");
+const dayjs = require('dayjs');
 console.log('Secret Key',secretKey)
 
 const corsOptions = {
-  origin: ['http://127.0.0.1:5173','http://localhost:5173','http://garages.thammadalok.com','https://garages.thammadalok.com','https://7lcclint.github.io'],
+  origin: ['http://127.0.0.1:5173','http://localhost:5173','https://7lcclint.github.io'],
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -99,11 +100,71 @@ app.post('/register', function (req, res) {
   })
 })
 
+app.post('/addEmployee', function (req, res) {
+  console.log(req.body);
+  const sql = "INSERT INTO garages.user (`first_name`, `last_name`, `email`, `password`, `user_type`) VALUES (?)";
+  const VALUES = [
+    req.body.firstname,
+    req.body.lastname,
+    req.body.email,
+    req.body.password,
+    2
+  ];
+  db.query(sql, [VALUES], (err, result) => {
+    if (err) {
+      console.error("Database error:", err); 
+      return res.json({ Error: "Error registering user" });
+    }
+    res.json({ Status: "Successfully" });
+  });  
+});
+
 app.get('/logout', (req, res) => {
     console.log("Logout");
     return res.json({ Status: "Successfully logged out" });
 });
-  
+
+function updateEmployeeStatus(email, status) {
+  return new Promise((resolve, reject) => {
+    const query = 'UPDATE employees SET status = ? WHERE email = ?';
+    pool.query(query, [status, email], (error, results) => {
+      if (error) {
+        return reject(error);
+      }
+      resolve(results);
+    });
+  });
+}
+
+app.put('/deactivateEmployee/:email', (req, res) => {
+  const email = req.params.email;
+  const status = req.body.status;
+
+  if (typeof status !== 'string' || !email) {
+    return res.status(400).json({ message: 'Invalid input' });
+  }  
+
+  updateEmployeeStatus(email, status)
+    .then(result => {
+      res.status(200).json({ message: 'Employee status updated successfully' });
+    })
+    .catch(error => {
+      console.error('Error updating employee status:', error);
+      res.status(500).json({ message: 'Error updating employee status', error });
+    });
+});
+
+function updateEmployeeStatus(email, status) {
+  return new Promise((resolve, reject) => {
+    const query = 'UPDATE user SET status = ? WHERE email = ?';
+    db.query(query, [status, email], (error, results) => {
+      if (error) {
+        return reject(error);
+      }
+      resolve(results);
+    });
+  });
+}
 
 app.get('/getUserDataByEmail', verify, function (req, res) {
   const sql = "SELECT * FROM garages.user WHERE email = ?";
@@ -205,6 +266,7 @@ app.get('/reservationsByStatusAccept', (req, res) => {
 app.get('/repairData', verify, (req, res) => {
   const sql = `
     SELECT
+      user.user_id,
       repair.repair_id,
       user.first_name,
       user.last_name,
@@ -230,7 +292,7 @@ app.get('/repairData', verify, (req, res) => {
 });
 
 app.get('/getRevenueList', (req, res) => {
-  const sql = 'SELECT discount_service, repair_date FROM garages.repair';
+  const sql = 'SELECT discount_service, repair_date FROM garages.repair ORDER BY repair_date ASC';
 
   db.query(sql, (err, data) => {
     if (err) {
@@ -284,15 +346,17 @@ app.get('/getPromotions', (req, res) => {
 
 app.put('/updateRepairData/:repairId', (req, res) => {
   const repairId = req.params.repairId;
-  const { repair_status } = req.body;
+  const { repair_status, discount_service, full_service } = req.body;
   
   const sql = `
     UPDATE repair
-    SET repair_status = ?
+    SET repair_status = ?,
+        discount_service = ?,
+        full_service = ?
     WHERE repair_id = ?;
   `;
 
-  const values = [repair_status, repairId];
+  const values = [repair_status, discount_service, full_service, repairId];
 
   db.query(sql, values, (err, result) => {
     if (err) {
@@ -340,6 +404,65 @@ app.put('/update-user-data', verify, (req, res) => {
     }
   });
 });
+
+app.post('/insertPromotion', (req, res) => {
+  const {
+      promotion_name,
+      promotion_detail,
+      promotion_code,
+      money,
+      percent,
+      start_date,
+      end_date
+  } = req.body;
+
+  const insertQuery = `INSERT INTO promotion (promotion_name, promotion_detail, promotion_code, money, percent, start_date, end_date, promotion_status)
+                      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+  const values = [
+      promotion_name,
+      promotion_detail,
+      promotion_code,
+      money,
+      percent,
+      start_date,
+      end_date,
+      1
+  ];
+
+  db.query(insertQuery, values, (err, result) => {
+      if (err) {
+          console.error('Database insertion error: ' + err.message);
+          res.status(500).json({ error: 'Database insertion failed' });
+      } else {
+          //console.log('Record inserted successfully');
+          res.status(200).json({ message: 'Record inserted successfully' });
+      }
+  });
+});
+
+app.post('/addRepairdata', verify, (req, res) => {
+  const { employee_id, repair_date, repair_status, user_id, reserve_id, repair_detail } = req.body;
+
+  if (!employee_id || !repair_date || !repair_status || !user_id || !reserve_id) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const insertQuery = `
+    INSERT INTO repair (employee_id, repair_date, repair_status, user_id, reserve_id, repair_detail, promotion_id)
+    VALUES (?, ?, ?, ?, ?, ?, 0)
+  `;
+  const values = [employee_id, repair_date, repair_status, user_id, reserve_id, repair_detail];
+
+  db.query(insertQuery, values, (err, result) => {
+    if (err) {
+      console.error('Database insertion error:', err);
+      return res.status(500).json({ error: 'Failed to add repair data to the database' });
+    }
+    console.log('Repair data added successfully');
+    return res.status(200).json({ message: 'Repair data added successfully' });
+  });
+});
+
 
 app.put('/change-password/:user_id', verify, (req, res) => {
   // 1. Extract Data
@@ -397,6 +520,40 @@ app.get('/getEmployees', verify, function (req, res) {
       return res.status(200).json(data);
     } else {
       return res.json({ Error: "Phone not found" });
+    }
+  });
+});
+
+app.post('/bookqueue', verify , (req, res) => {
+  const { user_id, vehicle_reg, reserve_date, detail } = req.body;
+
+  const parsedDate = dayjs(reserve_date, 'DD-MM-YYYY').format('YYYY-MM-DD');
+  const sql = 'INSERT INTO reserve (user_id, vehicle_reg, reserve_date, detail) VALUES (?, ?, ?, ?)';
+  const values = [user_id, vehicle_reg, parsedDate, detail];
+
+  db.query(sql, values, (err, result) => {
+    if (err) {
+     // console.error('Error inserting data: ' + err.message);
+      res.status(500).json({ error: 'Error inserting data' });
+    } else {
+     // console.log('Data inserted successfully');
+      res.status(200).json({ message: 'Data inserted successfully' });
+    }
+  });
+});
+
+app.put('/update-promotion/:promotionId', (req, res) => {
+  const { promotionId } = req.params;
+  const { promotionStatus } = req.body;
+
+  const sql = `UPDATE promotion SET promotion_status = ? WHERE promotion_id IN (?)`;
+
+  db.query(sql, [promotionStatus, promotionId], (err, result) => {
+    if (err) {
+      console.error('Error updating promotion status:', err);
+      res.status(500).send('Error updating promotion status');
+    } else {
+      res.status(200).send('Promotion status updated successfully');
     }
   });
 });
@@ -548,6 +705,8 @@ db.connect((err) => {
   }
   console.log('Connected to the database');
 });
+
+
 
 app.listen(3456, () => {
   console.log("Server running on port 3456");
