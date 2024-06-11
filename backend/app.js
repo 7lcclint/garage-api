@@ -217,15 +217,33 @@ app.put('/updateReserveData/:reserve_id', (req, res) => {
 });
 
 app.get('/reservations', verify, (req, res) => {
-    const user_id = req.user_id;
-    const sql = 'SELECT reserve.*, user.* FROM reserve INNER JOIN user ON user.user_id = reserve.user_id WHERE user.user_id = ?';
-    db.query(sql, [user_id], (err, data) => {
-      if (err) {
-        console.error('Error executing the SQL query:', err);
-        return res.status(500).json({ error: 'Error retrieving reservations' });
-      }
-      res.status(200).json(data);
-    });
+  const user_id = req.user_id;
+  const sql = `
+              SELECT
+            reserve.reserve_id, reserve.user_id, reserve.vehicle_reg,
+            reserve.reserve_date, reserve.status AS reserve_status, reserve.detail,
+            user.user_id, user.first_name, user.last_name, user.email,
+            user.password, user.phone, user.profile_picture,
+            user.address_street, user.address_province, user.address_district,
+            user.address_subdistrict, user.address_zipcode,
+            user.status AS user_status, user.user_type
+              FROM
+                  reserve
+                      INNER JOIN
+                  user ON user.user_id = reserve.user_id
+              WHERE
+                  user.user_id = ?
+              ORDER BY
+                  FIELD(reserve.status, '1', '2', '0'),
+                  reserve.reserve_date DESC`;
+  
+  db.query(sql, [user_id], (err, data) => {
+    if (err) {
+      console.error('Error executing the SQL query:', err);
+      return res.status(500).json({ error: 'Error retrieving reservations' });
+    }
+    res.status(200).json(data);
+  });
 });
 
 app.get('/allReservations', verify, (req, res) => {
@@ -526,10 +544,11 @@ app.get('/getEmployees', verify, function (req, res) {
 
 app.post('/bookqueue', verify , (req, res) => {
   const { user_id, vehicle_reg, reserve_date, detail } = req.body;
+  const status = '1';
 
   const parsedDate = dayjs(reserve_date, 'DD-MM-YYYY').format('YYYY-MM-DD');
-  const sql = 'INSERT INTO reserve (user_id, vehicle_reg, reserve_date, detail) VALUES (?, ?, ?, ?)';
-  const values = [user_id, vehicle_reg, parsedDate, detail];
+  const sql = 'INSERT INTO reserve (user_id, vehicle_reg, reserve_date, detail, status) VALUES (?, ?, ?, ?, ?)';
+  const values = [user_id, vehicle_reg, parsedDate, detail, status];
 
   db.query(sql, values, (err, result) => {
     if (err) {
