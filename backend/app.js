@@ -1,41 +1,49 @@
 const express = require("express");
 const cors = require("cors");
 const app = express();
-const mysql = require('mysql');
-const jwt = require('jsonwebtoken');
-const cookieParser = require('cookie-parser');
+const mysql = require("mysql");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 app.use(express.json());
 const crypto = require("crypto");
 const secretKey = crypto.randomBytes(32).toString("hex");
-const dayjs = require('dayjs');
-console.log('Secret Key',secretKey)
+const dayjs = require("dayjs");
+console.log("Secret Key", secretKey);
 
 const corsOptions = {
-  origin: ['http://127.0.0.1:5173','http://localhost:5173','https://7lcclint.github.io'],
+  origin: [
+    "http://127.0.0.1:5173",
+    "http://localhost:5173",
+    "https://7lcclint.github.io",
+    'https://garages.thammadalok.com', 
+    'http://garages.thammadalok.com'
+  ],
   credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE'],
-  allowedHeaders: ['Content-Type', 'Authorization']
+  methods: ["GET", "POST", "PUT", "DELETE"],
+  allowedHeaders: ["Content-Type", "Authorization"],
 };
 
 app.use(cors(corsOptions));
-app.options('/reservationsByStatusAccept', cors());
+app.options("/reservationsByStatusAccept", cors());
 app.use(cookieParser());
-app.use(express.json({ limit: '100mb' }));
+app.use(express.json({ limit: "100mb" }));
 
 const db = mysql.createConnection({
   host: "34.143.179.46",
   user: "root",
   password: "1234",
   database: "garages",
-  port: 3306
+  port: 3306,
 });
 
 const verify = (req, res, next) => {
-  const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const authHeader = req.headers["authorization"];
+  const token = authHeader && authHeader.split(" ")[1];
 
   if (!token) {
-    return res.status(401).json({ Error: "Not authenticated. No token provided." });
+    return res
+      .status(401)
+      .json({ Error: "Not authenticated. No token provided." });
   }
 
   jwt.verify(token, secretKey, (err, decoded) => {
@@ -56,7 +64,7 @@ const verify = (req, res, next) => {
 
 module.exports = verify;
 
-app.post('/login', function (req, res) {
+app.post("/login", function (req, res) {
   const sql = "SELECT * FROM garages.user WHERE email = ?";
   db.query(sql, [req.body.email], (err, data) => {
     if (err) {
@@ -65,17 +73,27 @@ app.post('/login', function (req, res) {
     if (data.length === 0) {
       return res.json({ Error: "User not found" });
     }
-    
+
     const user = data[0];
     if (req.body.password === user.password) {
       const { user_id, user_type, first_name, last_name, email } = user;
-      const token = jwt.sign({ first_name, last_name, email, user_id, user_type }, secretKey, { expiresIn: '1d' });
+      const token = jwt.sign(
+        { first_name, last_name, email, user_id, user_type },
+        secretKey,
+        { expiresIn: "1d" }
+      );
       res.cookie("token", token, {
         httpOnly: true,
-        secure: true, 
-        sameSite: 'none', // Can be 'strict', 'lax', or 'none'
+        secure: true,
+        sameSite: "none", // Can be 'strict', 'lax', or 'none'
       });
-      console.log("User Data:", { user_id, user_type, first_name, last_name, email });
+      console.log("User Data:", {
+        user_id,
+        user_type,
+        first_name,
+        last_name,
+        email,
+      });
       return res.json({ Status: "Successfully", user_type, token });
     } else {
       return res.json({ Error: "Passwords do not match" });
@@ -83,50 +101,52 @@ app.post('/login', function (req, res) {
   });
 });
 
-app.post('/register', function (req, res) {
-  const sql = "INSERT INTO garages.user (`first_name`, `last_name`, `email`, `password`, `user_type`) VALUES (?)";
+app.post("/register", function (req, res) {
+  const sql =
+    "INSERT INTO garages.user (`first_name`, `last_name`, `email`, `password`, `user_type`) VALUES (?)";
   const VALUES = [
     req.body.firstname,
     req.body.lastname,
     req.body.email,
     req.body.password,
-    1
-  ]
-  db.query(sql, [VALUES], (err, result) => {
-    if (err) {
-      return res.json({Error: "Error registering user"});
-    }
-    res.json({Status: "Successfully"});
-  })
-})
-
-app.post('/addEmployee', function (req, res) {
-  console.log(req.body);
-  const sql = "INSERT INTO garages.user (`first_name`, `last_name`, `email`, `password`, `user_type`) VALUES (?)";
-  const VALUES = [
-    req.body.firstname,
-    req.body.lastname,
-    req.body.email,
-    req.body.password,
-    2
+    1,
   ];
   db.query(sql, [VALUES], (err, result) => {
     if (err) {
-      console.error("Database error:", err); 
       return res.json({ Error: "Error registering user" });
     }
     res.json({ Status: "Successfully" });
-  });  
+  });
 });
 
-app.get('/logout', (req, res) => {
-    console.log("Logout");
-    return res.json({ Status: "Successfully logged out" });
+app.post("/addEmployee", function (req, res) {
+  console.log(req.body);
+  const sql =
+    "INSERT INTO garages.user (`first_name`, `last_name`, `email`, `password`, `user_type`) VALUES (?)";
+  const VALUES = [
+    req.body.firstname,
+    req.body.lastname,
+    req.body.email,
+    req.body.password,
+    2,
+  ];
+  db.query(sql, [VALUES], (err, result) => {
+    if (err) {
+      console.error("Database error:", err);
+      return res.json({ Error: "Error registering user" });
+    }
+    res.json({ Status: "Successfully" });
+  });
+});
+
+app.get("/logout", (req, res) => {
+  console.log("Logout");
+  return res.json({ Status: "Successfully logged out" });
 });
 
 function updateEmployeeStatus(email, status) {
   return new Promise((resolve, reject) => {
-    const query = 'UPDATE employees SET status = ? WHERE email = ?';
+    const query = "UPDATE employees SET status = ? WHERE email = ?";
     pool.query(query, [status, email], (error, results) => {
       if (error) {
         return reject(error);
@@ -136,27 +156,29 @@ function updateEmployeeStatus(email, status) {
   });
 }
 
-app.put('/deactivateEmployee/:email', (req, res) => {
+app.put("/deactivateEmployee/:email", (req, res) => {
   const email = req.params.email;
   const status = req.body.status;
 
-  if (typeof status !== 'string' || !email) {
-    return res.status(400).json({ message: 'Invalid input' });
-  }  
+  if (typeof status !== "string" || !email) {
+    return res.status(400).json({ message: "Invalid input" });
+  }
 
   updateEmployeeStatus(email, status)
-    .then(result => {
-      res.status(200).json({ message: 'Employee status updated successfully' });
+    .then((result) => {
+      res.status(200).json({ message: "Employee status updated successfully" });
     })
-    .catch(error => {
-      console.error('Error updating employee status:', error);
-      res.status(500).json({ message: 'Error updating employee status', error });
+    .catch((error) => {
+      console.error("Error updating employee status:", error);
+      res
+        .status(500)
+        .json({ message: "Error updating employee status", error });
     });
 });
 
 function updateEmployeeStatus(email, status) {
   return new Promise((resolve, reject) => {
-    const query = 'UPDATE user SET status = ? WHERE email = ?';
+    const query = "UPDATE user SET status = ? WHERE email = ?";
     db.query(query, [status, email], (error, results) => {
       if (error) {
         return reject(error);
@@ -166,34 +188,34 @@ function updateEmployeeStatus(email, status) {
   });
 }
 
-app.get('/getUserDataByEmail', verify, function (req, res) {
+app.get("/getUserDataByEmail", verify, function (req, res) {
   const sql = "SELECT * FROM garages.user WHERE email = ?";
   db.query(sql, [req.email], (err, data) => {
     if (err) return res.json({ Error: "Error retrieving phone" });
     if (data.length > 0) {
-        const userData = {
-            Status: 'Successfully', 
-            firstname: req.firstname,
-            lastname: req.lastname,
-            user_id: data[0].user_id,
-            email: req.email,
-            phone: data[0].phone,
-            profile_picture: data[0].profile_picture,
-            address_street: data[0].address_street,
-            address_province: data[0].address_province,
-            address_district: data[0].address_district,
-            address_subdistrict: data[0].address_subdistrict,
-            address_zipcode: data[0].address_zipcode,
-            user_type: data[0].user_type
-        };
-    return res.status(200).json(userData);
+      const userData = {
+        Status: "Successfully",
+        firstname: req.firstname,
+        lastname: req.lastname,
+        user_id: data[0].user_id,
+        email: req.email,
+        phone: data[0].phone,
+        profile_picture: data[0].profile_picture,
+        address_street: data[0].address_street,
+        address_province: data[0].address_province,
+        address_district: data[0].address_district,
+        address_subdistrict: data[0].address_subdistrict,
+        address_zipcode: data[0].address_zipcode,
+        user_type: data[0].user_type,
+      };
+      return res.status(200).json(userData);
     } else {
-        return res.json({ Error: "Phone not found" });
+      return res.json({ Error: "Phone not found" });
     }
-    });
+  });
 });
-  
-app.put('/updateReserveData/:reserve_id', (req, res) => {
+
+app.put("/updateReserveData/:reserve_id", (req, res) => {
   const reserve_id = req.params.reserve_id;
   const { status } = req.body;
 
@@ -207,16 +229,18 @@ app.put('/updateReserveData/:reserve_id', (req, res) => {
 
   db.query(sql, values, (err, result) => {
     if (err) {
-      return res.status(500).json({ error: 'Error updating reserve data' });
+      return res.status(500).json({ error: "Error updating reserve data" });
     } else if (result.changedRows === 0) {
-      return res.status(500).json({ error: 'No rows were updated' });
+      return res.status(500).json({ error: "No rows were updated" });
     } else {
-      return res.status(200).json({ message: 'reserve data updated successfully' });
+      return res
+        .status(200)
+        .json({ message: "reserve data updated successfully" });
     }
   });
 });
 
-app.get('/reservations', verify, (req, res) => {
+app.get("/reservations", verify, (req, res) => {
   const user_id = req.user_id;
   const sql = `
               SELECT
@@ -236,52 +260,59 @@ app.get('/reservations', verify, (req, res) => {
               ORDER BY
                   FIELD(reserve.status, '1', '2', '0'),
                   reserve.reserve_date DESC`;
-  
+
   db.query(sql, [user_id], (err, data) => {
     if (err) {
-      console.error('Error executing the SQL query:', err);
-      return res.status(500).json({ error: 'Error retrieving reservations' });
+      console.error("Error executing the SQL query:", err);
+      return res.status(500).json({ error: "Error retrieving reservations" });
     }
     res.status(200).json(data);
   });
 });
 
-app.get('/allReservations', verify, (req, res) => {
+app.get("/allReservations", verify, (req, res) => {
   const sql = `
     SELECT user.first_name,
-           user.last_name,
-           reserve.vehicle_reg,
-           reserve.reserve_date,
-           reserve.detail,
-           reserve.status,
-           reserve.reserve_id
-    FROM reserve
-    INNER JOIN user ON user.user_id = reserve.user_id
-    where user.user_type not in(2,3)
+       user.last_name,
+       reserve.vehicle_reg,
+       reserve.reserve_date,
+       reserve.detail,
+       reserve.status,
+       reserve.reserve_id
+      FROM reserve
+              INNER JOIN user ON user.user_id = reserve.user_id
+      where user.user_type not in(2,3)
+      ORDER BY
+          CASE reserve.status
+              WHEN '1' THEN 1
+              WHEN '2' THEN 2
+              WHEN '0' THEN 3
+              END;
   `;
   db.query(sql, (err, data) => {
     if (err) {
-      console.error('Error executing the SQL query:', err);
-      return res.status(500).json({ error: 'Error retrieving reservations' });
+      console.error("Error executing the SQL query:", err);
+      return res.status(500).json({ error: "Error retrieving reservations" });
     }
     res.status(200).json(data);
   });
 });
 
-
-app.get('/reservationsByStatusAccept', (req, res) => {
-  const procedureName = 'GetReservationsByStatusAccept'; 
+app.get("/reservationsByStatusAccept", (req, res) => {
+  const procedureName = "GetReservationsByStatusAccept";
 
   db.query(`CALL ${procedureName}`, (err, data) => {
     if (err) {
-      console.error('Error executing the stored procedure:', err);
-      return res.status(500).json({ error: 'Error calling the stored procedure' });
+      console.error("Error executing the stored procedure:", err);
+      return res
+        .status(500)
+        .json({ error: "Error calling the stored procedure" });
     }
-    res.status(200).json(data[0]); 
+    res.status(200).json(data[0]);
   });
 });
 
-app.get('/repairData', verify, (req, res) => {
+app.get("/repairData", verify, (req, res) => {
   const sql = `
     SELECT
       user.user_id,
@@ -302,26 +333,27 @@ app.get('/repairData', verify, (req, res) => {
 
   db.query(sql, (err, data) => {
     if (err) {
-      console.error('Error executing the SQL query:', err);
-      return res.status(500).json({ error: 'Error retrieving repair data' });
+      console.error("Error executing the SQL query:", err);
+      return res.status(500).json({ error: "Error retrieving repair data" });
     }
     res.status(200).json(data);
   });
 });
 
-app.get('/getRevenueList', (req, res) => {
-  const sql = 'SELECT discount_service, repair_date FROM garages.repair ORDER BY repair_date ASC';
+app.get("/getRevenueList", (req, res) => {
+  const sql =
+    "SELECT discount_service, repair_date FROM garages.repair ORDER BY repair_date ASC";
 
   db.query(sql, (err, data) => {
     if (err) {
-      console.error('Error executing the SQL query:', err);
-      return res.status(500).json({ error: 'Error retrieving repair data' });
+      console.error("Error executing the SQL query:", err);
+      return res.status(500).json({ error: "Error retrieving repair data" });
     }
     res.status(200).json(data);
   });
 });
 
-app.get('/repairData/:user_id', verify, (req, res) => {
+app.get("/repairData/:user_id", verify, (req, res) => {
   const user_id = req.params.user_id;
   const sql = `
     SELECT
@@ -337,35 +369,39 @@ app.get('/repairData/:user_id', verify, (req, res) => {
     WHERE user.user_id = ?;
   `;
 
-  db.query(sql,user_id, (err, data) => {
+  db.query(sql, user_id, (err, data) => {
     if (err) {
-      console.error('Error executing the SQL query:', err);
-      return res.status(500).json({ error: 'Error retrieving repair data' });
+      console.error("Error executing the SQL query:", err);
+      return res.status(500).json({ error: "Error retrieving repair data" });
     }
     res.status(200).json(data);
   });
 });
 
-app.get('/getPromotions', (req, res) => {
-
-  db.query(`SELECT promotion_id, promotion_name, promotion_detail, 
+app.get("/getPromotions", (req, res) => {
+  db.query(
+    `SELECT promotion_id, promotion_name, promotion_detail, 
             promotion_code, money, percent, 
             DATE_FORMAT(start_date, '%d-%m-%Y') AS start_date, 
             DATE_FORMAT(end_date, '%d-%m-%Y') AS end_date, 
             promotion_status 
-          FROM promotion`, (err, data) => {
-    if (err) {
-      console.error('Error executing the stored procedure:', err);
-      return res.status(500).json({ error: 'Error calling the stored procedure' });
+          FROM promotion`,
+    (err, data) => {
+      if (err) {
+        console.error("Error executing the stored procedure:", err);
+        return res
+          .status(500)
+          .json({ error: "Error calling the stored procedure" });
+      }
+      res.status(200).json(data);
     }
-    res.status(200).json(data); 
-  });
+  );
 });
 
-app.put('/updateRepairData/:repairId', (req, res) => {
+app.put("/updateRepairData/:repairId", (req, res) => {
   const repairId = req.params.repairId;
   const { repair_status, discount_service, full_service } = req.body;
-  
+
   const sql = `
     UPDATE repair
     SET repair_status = ?,
@@ -378,19 +414,32 @@ app.put('/updateRepairData/:repairId', (req, res) => {
 
   db.query(sql, values, (err, result) => {
     if (err) {
-      console.error('Error updating repair data:', err);
-      return res.status(500).json({ error: 'Error updating repair data' });
+      console.error("Error updating repair data:", err);
+      return res.status(500).json({ error: "Error updating repair data" });
     } else if (result.changedRows === 0) {
-      console.error('No rows were updated');
-      return res.status(500).json({ error: 'No rows were updated' });
+      console.error("No rows were updated");
+      return res.status(500).json({ error: "No rows were updated" });
     } else {
-      return res.status(200).json({ message: 'Repair data updated successfully' });
+      return res
+        .status(200)
+        .json({ message: "Repair data updated successfully" });
     }
   });
 });
 
-app.put('/update-user-data', verify, (req, res) => {
-  const {user_id,firstName,lastName,phone,email,street,province,district,subdistrict,zipcode} = req.body;
+app.put("/update-user-data", verify, (req, res) => {
+  const {
+    user_id,
+    firstName,
+    lastName,
+    phone,
+    email,
+    street,
+    province,
+    district,
+    subdistrict,
+    zipcode,
+  } = req.body;
   const sql = `
     UPDATE garages.user
     SET first_name = ?,
@@ -405,131 +454,172 @@ app.put('/update-user-data', verify, (req, res) => {
     WHERE user_id = ?;
   `;
 
-  const values = [ firstName, lastName, phone, email, street,
-                   province,  district, subdistrict,  zipcode,
-                  user_id ];
+  const values = [
+    firstName,
+    lastName,
+    phone,
+    email,
+    street,
+    province,
+    district,
+    subdistrict,
+    zipcode,
+    user_id,
+  ];
 
   db.query(sql, values, (err, result) => {
     if (err) {
-      console.error('Error updating user data:', err);
-      return res.status(500).json({ error: 'Error updating user data' });
+      console.error("Error updating user data:", err);
+      return res.status(500).json({ error: "Error updating user data" });
     } else if (result.changedRows === 0) {
-      console.error('No rows were updated');
-      return res.status(500).json({ error: 'No rows were updated' })
+      console.error("No rows were updated");
+      return res.status(500).json({ error: "No rows were updated" });
     } else {
       //console.log('User data updated successfully');
-      return res.status(200).json({ message: 'User data updated successfully' });
+      return res
+        .status(200)
+        .json({ message: "User data updated successfully" });
     }
   });
 });
 
-app.post('/insertPromotion', (req, res) => {
+app.post("/insertPromotion", (req, res) => {
   const {
-      promotion_name,
-      promotion_detail,
-      promotion_code,
-      money,
-      percent,
-      start_date,
-      end_date
+    promotion_name,
+    promotion_detail,
+    promotion_code,
+    money,
+    percent,
+    start_date,
+    end_date,
   } = req.body;
 
   const insertQuery = `INSERT INTO promotion (promotion_name, promotion_detail, promotion_code, money, percent, start_date, end_date, promotion_status)
                       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
   const values = [
-      promotion_name,
-      promotion_detail,
-      promotion_code,
-      money,
-      percent,
-      start_date,
-      end_date,
-      1
+    promotion_name,
+    promotion_detail,
+    promotion_code,
+    money,
+    percent,
+    start_date,
+    end_date,
+    1,
   ];
 
   db.query(insertQuery, values, (err, result) => {
-      if (err) {
-          console.error('Database insertion error: ' + err.message);
-          res.status(500).json({ error: 'Database insertion failed' });
-      } else {
-          //console.log('Record inserted successfully');
-          res.status(200).json({ message: 'Record inserted successfully' });
-      }
+    if (err) {
+      console.error("Database insertion error: " + err.message);
+      res.status(500).json({ error: "Database insertion failed" });
+    } else {
+      //console.log('Record inserted successfully');
+      res.status(200).json({ message: "Record inserted successfully" });
+    }
   });
 });
 
-app.post('/addRepairdata', verify, (req, res) => {
-  const { employee_id, repair_date, repair_status, user_id, reserve_id, repair_detail } = req.body;
+app.post("/addRepairdata", verify, (req, res) => {
+  const {
+    employee_id,
+    repair_date,
+    repair_status,
+    user_id,
+    reserve_id,
+    repair_detail,
+  } = req.body;
 
-  if (!employee_id || !repair_date || !repair_status || !user_id || !reserve_id) {
-    return res.status(400).json({ error: 'Missing required fields' });
+  if (
+    !employee_id ||
+    !repair_date ||
+    !repair_status ||
+    !user_id ||
+    !reserve_id
+  ) {
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
   const insertQuery = `
     INSERT INTO repair (employee_id, repair_date, repair_status, user_id, reserve_id, repair_detail, promotion_id)
     VALUES (?, ?, ?, ?, ?, ?, 0)
   `;
-  const values = [employee_id, repair_date, repair_status, user_id, reserve_id, repair_detail];
+  const values = [
+    employee_id,
+    repair_date,
+    repair_status,
+    user_id,
+    reserve_id,
+    repair_detail,
+  ];
 
   db.query(insertQuery, values, (err, result) => {
     if (err) {
-      console.error('Database insertion error:', err);
-      return res.status(500).json({ error: 'Failed to add repair data to the database' });
+      console.error("Database insertion error:", err);
+      return res
+        .status(500)
+        .json({ error: "Failed to add repair data to the database" });
     }
-    console.log('Repair data added successfully');
-    return res.status(200).json({ message: 'Repair data added successfully' });
+    console.log("Repair data added successfully");
+    return res.status(200).json({ message: "Repair data added successfully" });
   });
 });
 
-
-app.put('/change-password/:user_id', verify, (req, res) => {
+app.put("/change-password/:user_id", verify, (req, res) => {
   // 1. Extract Data
-  const user_id = req.user_id;  // Assumes `verify` middleware sets req.user_id
+  const user_id = req.user_id; // Assumes `verify` middleware sets req.user_id
   const currentPassword = req.body.currentPassword;
   const newPassword = req.body.newPassword;
 
   // 2. Input Validation
   if (!currentPassword || !newPassword) {
-    return res.status(400).json({ error: 'Current and new passwords are required' }); // Bad Request
+    return res
+      .status(400)
+      .json({ error: "Current and new passwords are required" }); // Bad Request
   }
 
   // 3. Fetch User's Existing Password
-  db.query('SELECT password FROM user WHERE user_id = ?', [user_id], (err, results) => {
-    if (err) { 
-      console.error('Error fetching user password:', err);
-      return res.status(500).json({ error: 'Database error' }); // Internal Server Error (general)
+  db.query(
+    "SELECT password FROM user WHERE user_id = ?",
+    [user_id],
+    (err, results) => {
+      if (err) {
+        console.error("Error fetching user password:", err);
+        return res.status(500).json({ error: "Database error" }); // Internal Server Error (general)
+      }
+
+      // 4. Handle User Not Found
+      if (results.length === 0) {
+        return res.status(404).json({ error: "User not found" }); // Not Found
+      }
+
+      // 5. Compare Passwords
+      const oldPassword = results[0].password;
+      if (currentPassword === oldPassword) {
+        // 6. Update Password if Correct
+        db.query(
+          "UPDATE user SET password = ? WHERE user_id = ?",
+          [newPassword, user_id],
+          (err, result) => {
+            if (err) {
+              console.error("Error updating password:", err);
+              return res.status(500).json({ error: "Error updating password" }); // Specific DB update error
+            }
+
+            if (result.affectedRows === 1) {
+              return res.json({ message: "Password updated successfully" }); // Success!
+            } else {
+              return res.status(500).json({ error: "Password update failed" }); // Unexpected DB behavior
+            }
+          }
+        );
+      } else {
+        // Added error handling:
+        return res.status(401).json({ error: "Current password is incorrect" }); // Unauthorized
+      }
     }
-
-    // 4. Handle User Not Found
-    if (results.length === 0) {
-      return res.status(404).json({ error: 'User not found' }); // Not Found
-    }
-
-    // 5. Compare Passwords
-    const oldPassword = results[0].password;
-    if (currentPassword === oldPassword) {
-
-      // 6. Update Password if Correct
-      db.query('UPDATE user SET password = ? WHERE user_id = ?', [newPassword, user_id], (err, result) => {
-        if (err) {
-          console.error('Error updating password:', err);
-          return res.status(500).json({ error: 'Error updating password' }); // Specific DB update error
-        }
-
-        if (result.affectedRows === 1) {
-          return res.json({ message: 'Password updated successfully' }); // Success!
-        } else {
-          return res.status(500).json({ error: 'Password update failed' }); // Unexpected DB behavior
-        }
-      });
-
-    } else { // Added error handling:
-      return res.status(401).json({ error: 'Current password is incorrect' }); // Unauthorized
-    }
-  });
+  );
 });
 
-app.get('/getEmployees', verify, function (req, res) {
+app.get("/getEmployees", verify, function (req, res) {
   const userTypeId = 2;
   const sql = "SELECT * FROM garages.user WHERE user_type = ?";
   db.query(sql, [userTypeId], (err, data) => {
@@ -542,26 +632,27 @@ app.get('/getEmployees', verify, function (req, res) {
   });
 });
 
-app.post('/bookqueue', verify , (req, res) => {
+app.post("/bookqueue", verify, (req, res) => {
   const { user_id, vehicle_reg, reserve_date, detail } = req.body;
-  const status = '1';
+  const status = "1";
 
-  const parsedDate = dayjs(reserve_date, 'DD-MM-YYYY').format('YYYY-MM-DD');
-  const sql = 'INSERT INTO reserve (user_id, vehicle_reg, reserve_date, detail, status) VALUES (?, ?, ?, ?, ?)';
+  const parsedDate = dayjs(reserve_date, "DD-MM-YYYY").format("YYYY-MM-DD");
+  const sql =
+    "INSERT INTO reserve (user_id, vehicle_reg, reserve_date, detail, status) VALUES (?, ?, ?, ?, ?)";
   const values = [user_id, vehicle_reg, parsedDate, detail, status];
 
   db.query(sql, values, (err, result) => {
     if (err) {
-     // console.error('Error inserting data: ' + err.message);
-      res.status(500).json({ error: 'Error inserting data' });
+      // console.error('Error inserting data: ' + err.message);
+      res.status(500).json({ error: "Error inserting data" });
     } else {
-     // console.log('Data inserted successfully');
-      res.status(200).json({ message: 'Data inserted successfully' });
+      // console.log('Data inserted successfully');
+      res.status(200).json({ message: "Data inserted successfully" });
     }
   });
 });
 
-app.put('/update-promotion/:promotionId', (req, res) => {
+app.put("/update-promotion/:promotionId", (req, res) => {
   const { promotionId } = req.params;
   const { promotionStatus } = req.body;
 
@@ -569,22 +660,22 @@ app.put('/update-promotion/:promotionId', (req, res) => {
 
   db.query(sql, [promotionStatus, promotionId], (err, result) => {
     if (err) {
-      console.error('Error updating promotion status:', err);
-      res.status(500).send('Error updating promotion status');
+      console.error("Error updating promotion status:", err);
+      res.status(500).send("Error updating promotion status");
     } else {
-      res.status(200).send('Promotion status updated successfully');
+      res.status(200).send("Promotion status updated successfully");
     }
   });
 });
 
-app.put('/update-profile-picture/:user_id', verify, (req, res) => {
+app.put("/update-profile-picture/:user_id", verify, (req, res) => {
   const user_id = req.params.user_id;
   const base64Image = req.body.image; // Receive the base64 string from the frontend
 
   if (base64Image) {
     // Validate base64 string (check format, file type, size if needed)
-    if (!base64Image.startsWith('data:image/')) {
-      return res.status(400).json({ error: 'Invalid image format' });
+    if (!base64Image.startsWith("data:image/")) {
+      return res.status(400).json({ error: "Invalid image format" });
     }
 
     const sql = `
@@ -595,120 +686,141 @@ app.put('/update-profile-picture/:user_id', verify, (req, res) => {
 
     db.query(sql, [base64Image, user_id], (err, result) => {
       if (err) {
-        console.error('Error updating profile picture:', err);
-        return res.status(500).json({ error: 'Error updating profile picture' });
+        console.error("Error updating profile picture:", err);
+        return res
+          .status(500)
+          .json({ error: "Error updating profile picture" });
       } else if (result.changedRows === 0) {
-        return res.status(500).json({ error: 'No rows were updated' });
+        return res.status(500).json({ error: "No rows were updated" });
       } else {
-        return res.status(200).json({ message: 'Profile picture updated successfully', profile_picture: base64Image });
+        return res
+          .status(200)
+          .json({
+            message: "Profile picture updated successfully",
+            profile_picture: base64Image,
+          });
       }
     });
   } else {
-    res.status(400).json({ error: 'Image data not provided' });
+    res.status(400).json({ error: "Image data not provided" });
   }
 });
 
-app.get('/fullReports', (req, res) => {
-  db.query('CALL fullReports()', (error, results) => {
+app.get("/fullReports", (req, res) => {
+  db.query("CALL fullReports()", (error, results) => {
     if (error) {
-      console.error('เกิดข้อผิดพลาดในการเรียก Stored Procedure: ' + error);
-      res.status(500).json({ error: 'พบข้อผิดพลดในการเรียก Stored Procedure' });
+      console.error("เกิดข้อผิดพลาดในการเรียก Stored Procedure: " + error);
+      res.status(500).json({ error: "พบข้อผิดพลดในการเรียก Stored Procedure" });
     } else {
-      const formattedResults = results[0].map(result => ({
+      const formattedResults = results[0].map((result) => ({
         ...result,
-        repair_date: result.repair_date.toISOString().split('T')[0],
+        repair_date: result.repair_date.toISOString().split("T")[0],
       }));
       res.json(formattedResults);
     }
   });
 });
 
-app.get('/promotionReportsByStartEnd', (req, res) => {
-
+app.get("/promotionReportsByStartEnd", (req, res) => {
   const { start_date, end_date } = req.query;
   if (!start_date || !end_date) {
-    res.status(400).json({ error: 'โปรดระบุวันที่เริ่มต้นและวันที่สิ้นสุด' });
+    res.status(400).json({ error: "โปรดระบุวันที่เริ่มต้นและวันที่สิ้นสุด" });
     return;
   }
 
-  db.query('CALL promotionReportsByStartEnd(?, ?)', [start_date, end_date], (err, results) => {
+  db.query(
+    "CALL promotionReportsByStartEnd(?, ?)",
+    [start_date, end_date],
+    (err, results) => {
       if (err) {
-          console.error('Error calling stored procedure: ' + err);
-          res.status(500).json({ error: 'Error fetching data' });
-          return;
+        console.error("Error calling stored procedure: " + err);
+        res.status(500).json({ error: "Error fetching data" });
+        return;
       } else {
-        const formattedResults = results[0].map(result => ({
+        const formattedResults = results[0].map((result) => ({
           ...result,
         }));
         res.json(formattedResults);
       }
-  });
+    }
+  );
 });
 
-app.get('/reportRevenueByStartEnd', (req, res) => {
-
+app.get("/reportRevenueByStartEnd", (req, res) => {
   const { start_date, end_date } = req.query;
   if (!start_date || !end_date) {
-    res.status(400).json({ error: 'โปรดระบุวันที่เริ่มต้นและวันที่สิ้นสุด' });
+    res.status(400).json({ error: "โปรดระบุวันที่เริ่มต้นและวันที่สิ้นสุด" });
     return;
   }
 
-  db.query('CALL reportRevenueByStartEnd(?, ?)', [start_date, end_date], (err, results) => {
+  db.query(
+    "CALL reportRevenueByStartEnd(?, ?)",
+    [start_date, end_date],
+    (err, results) => {
       if (err) {
-          console.error('Error calling stored procedure: ' + err);
-          res.status(500).json({ error: 'Error fetching data' });
-          return;
+        console.error("Error calling stored procedure: " + err);
+        res.status(500).json({ error: "Error fetching data" });
+        return;
       } else {
-        const formattedResults = results[0].map(result => ({
+        const formattedResults = results[0].map((result) => ({
           ...result,
         }));
         res.json(formattedResults);
       }
-  });
+    }
+  );
 });
 
-app.get('/reportRevenueAll', (req, res) => {
-  db.query('CALL reportRevenueAll()', (err, results) => {
+app.get("/reportRevenueAll", (req, res) => {
+  db.query("CALL reportRevenueAll()", (err, results) => {
     if (err) {
-      console.error('Error executing the stored procedure: ' + err);
-      res.status(500).json({ error: 'Internal Server Error' });
+      console.error("Error executing the stored procedure: " + err);
+      res.status(500).json({ error: "Internal Server Error" });
     } else {
       res.json(results[0]);
     }
   });
 });
 
-app.get('/fullReportsByStartEnd', (req, res) => {
+app.get("/fullReportsByStartEnd", (req, res) => {
   const { start_date, end_date } = req.query;
 
   if (!start_date || !end_date) {
-    res.status(400).json({ error: 'โปรดระบุวันที่เริ่มต้นและวันที่สิ้นสุด' });
+    res.status(400).json({ error: "โปรดระบุวันที่เริ่มต้นและวันที่สิ้นสุด" });
     return;
   }
 
-  db.query('CALL fullReportsByStartEnd(?, ?)', [start_date, end_date], (error, results) => {
-    if (error) {
-      console.error('เกิดข้อผิดพลาดในการเรียก Stored Procedure: ' + error);
-      res.status(500).json({ error: 'พบข้อผิดพลดในการเรียก Stored Procedure' });
-    } else {
-      const formattedResults = results[0].map(result => ({
-        ...result,
-      }));
-      res.json(formattedResults);
+  db.query(
+    "CALL fullReportsByStartEnd(?, ?)",
+    [start_date, end_date],
+    (error, results) => {
+      if (error) {
+        console.error("เกิดข้อผิดพลาดในการเรียก Stored Procedure: " + error);
+        res
+          .status(500)
+          .json({ error: "พบข้อผิดพลดในการเรียก Stored Procedure" });
+      } else {
+        const formattedResults = results[0].map((result) => ({
+          ...result,
+        }));
+        res.json(formattedResults);
+      }
     }
-  });
+  );
 });
 
-app.get('/reportRevenueByMonth/:year', (req, res) => {
+app.get("/reportRevenueByMonth/:year", (req, res) => {
   const year = req.params.year;
 
-  db.query('CALL reportRevenueByMonth(?)', [year], (err, results) => {
+  db.query("CALL reportRevenueByMonth(?)", [year], (err, results) => {
     if (err) {
-      console.error('Error calling stored procedure:', err);
-      return res.status(500).json({ error: 'Error calling the stored procedure' });
+      console.error("Error calling stored procedure:", err);
+      return res
+        .status(500)
+        .json({ error: "Error calling the stored procedure" });
     }
 
-    const formattedResults = results[0].map(result => ({
+    const formattedResults = results[0].map((result) => ({
       month: result.month,
       revenue: result.revenue,
     }));
@@ -719,13 +831,11 @@ app.get('/reportRevenueByMonth/:year', (req, res) => {
 
 db.connect((err) => {
   if (err) {
-    console.error('Error connecting to the database:', err);
+    console.error("Error connecting to the database:", err);
     return;
   }
-  console.log('Connected to the database');
+  console.log("Connected to the database");
 });
-
-
 
 app.listen(3456, () => {
   console.log("Server running on port 3456");
